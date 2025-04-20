@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>比赛预测系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 40px;
+            background-color: #f8f9fa;
+        }
+        .chart-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="text-center mb-4">🏟️ 比赛胜负预测</h1>
+
+    <form method="post" action="/predict" class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">比赛日期</label>
+            <input type="text" name="date" class="form-control" required value="{{ date or '' }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">主队</label>
+            <input type="text" name="home_team" class="form-control" required value="{{ home_team or '' }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">客队</label>
+            <input type="text" name="away_team" class="form-control" required value="{{ away_team or '' }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">选择模型</label>
+            <select name="model_choice" class="form-select">
+                <option value="lstm" {% if model_choice == 'lstm' %}selected{% endif %}>LSTM</option>
+                <option value="xgboost" {% if model_choice == 'xgboost' %}selected{% endif %}>XGBoost</option>
+                <option value="lightgbm" {% if model_choice == 'lightgbm' %}selected{% endif %}>LightGBM</option>
+                <option value="catboost" {% if model_choice == 'catboost' %}selected{% endif %}>CatBoost</option>
+            </select>
+        </div>
+        <div class="col-12 text-center mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">预测</button>
+        </div>
+    </form>
+
+    {% if error %}
+        <div class="alert alert-danger mt-4" role="alert">{{ error }}</div>
+    {% endif %}
+
+{% if result %}
+    <div class="mt-5">
+        <h2 class="text-center mb-4">🎯 预测结果</h2>
+        <p><strong>比赛：</strong>{{ result.home_team }} vs {{ result.away_team }}</p>
+        <p><strong>预测结果：</strong>{{ result.predicted }}</p>
+        <p><strong>实际结果：</strong>{{ result.actual }}</p>
+        <p><strong>历史交战总进球数：</strong> {{ result.home_team }} {{ home_total_goals }} - {{ away_total_goals }} {{ result.away_team }}</p>
+    </div>
+
+    <div class="row mt-5">
+        {% if history_chart %}
+        <div class="col-md-12 text-center mb-4">
+            <h4 class="mb-3">📊 历史交战进球图</h4>
+            <img src="{{ history_chart }}" alt="历史交战图" class="chart-img">
+        </div>
+        {% endif %}
+
+        {% if home_team_history_list %}
+        <div class="col-md-6 text-center mb-4">
+            <h4 class="mb-3">🏠 {{ result.home_team }} 最近5场比赛</h4>
+            <p><strong>进球数：</strong> {{ home_history_goals }} &nbsp; | &nbsp; <strong>失球数：</strong> {{ home_history_loss }}</p>
+            <table class="table table-bordered table-sm text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>日期</th>
+                  <th>主队</th>
+                  <th>比分</th>
+                  <th>客队</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for match in home_team_history_list %}
+                  {% set parts = match.split('_') %}
+                  <tr>
+                    <td>{{ parts[0] }}</td>
+                    <td>{{ parts[1] }}</td>
+                    <td>{{ parts[2] }}</td>
+                    <td>{{ parts[3] }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+        </div>
+        {% endif %}
+
+        {% if away_team_history_list %}
+        <div class="col-md-6 text-center mb-4">
+            <h4 class="mb-3">🛫 {{ result.away_team }} 最近5场比赛</h4>
+            <p><strong>进球数：</strong> {{ away_history_goals }} &nbsp; | &nbsp; <strong>失球数：</strong> {{ away_history_loss }}</p>
+            <table class="table table-bordered table-sm text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>日期</th>
+                  <th>主队</th>
+                  <th>比分</th>
+                  <th>客队</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for match in away_team_history_list %}
+                  {% set parts = match.split('_') %}
+                  <tr>
+                    <td>{{ parts[0] }}</td>
+                    <td>{{ parts[1] }}</td>
+                    <td>{{ parts[2] }}</td>
+                    <td>{{ parts[3] }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+    </div>
+{% endif %}
+</div>
+</body>
+</html>
